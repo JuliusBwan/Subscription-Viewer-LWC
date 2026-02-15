@@ -1,0 +1,37 @@
+public with sharing class SubscriptionMirrorFullBatch implements Database.Batchable<SObject>{
+    
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+
+        return Database.getQueryLocator(
+            'SELECT Id, Name, SBQQ__Account__c, ' +
+            'SBQQ__Product__r.Name, SBQQ__Contract__r.Status, ' +
+            'SBQQ__StartDate__c, SBQQ__EndDate__c ' +
+            'FROM SBQQ__Subscription__c'
+        );
+    }
+
+    public void execute(Database.BatchableContext bc, List<SBQQ__Subscription__c> scope) {
+
+        List<Subscription_Viewer__c> mirrorRecords = new List<Subscription_Viewer__c>();
+
+        for (SBQQ__Subscription__c sub : scope) {
+
+            Subscription_Viewer__c mirror = new Subscription_Viewer__c();
+            mirror.CPQ_Subscription_Id__c = sub.Id;
+            mirror.Name = sub.Name;
+            mirror.Account__c = sub.SBQQ__Account__c;
+            mirror.Product_Name__c = sub.SBQQ__Product__r != null ? sub.SBQQ__Product__r.Name : null;
+            mirror.Contract_Status__c = sub.SBQQ__Contract__r != null ? sub.SBQQ__Contract__r.Status : null;
+            mirror.Start_Date__c = sub.SBQQ__StartDate__c;
+            mirror.End_Date__c = sub.SBQQ__EndDate__c;
+
+            mirrorRecords.add(mirror);
+        }
+
+        if (!mirrorRecords.isEmpty()) { Database.upsert(mirrorRecords, Subscription_Viewer__c.Fields.CPQ_Subscription_Id__c, false); }
+    }
+
+    public void finish(Database.BatchableContext bc) { 
+        System.debug('Finished...');
+    }
+}
