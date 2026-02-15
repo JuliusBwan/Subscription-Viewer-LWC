@@ -1,0 +1,53 @@
+public with sharing class SubscriptionMirrorQueueable implements Queueable {
+
+    private Set<Id> subscriptionIds;
+    private Boolean isDelete;
+
+    public SubscriptionMirrorQueueable(Set<id> subscriptionIds, Boolean isDelete) {
+        subscriptionIds = subscriptionIds;
+        isDelete = isDelete;
+    }
+
+    public void execute(QueueableContext qc){
+
+        if (isDelete) {
+            List<Subscription_Viewer__c> toDelete = [
+                SELECT Id 
+                FROM Subscription_Viewer__c 
+                WHERE CPQ_Subscription_Id__c IN :subscriptionIds
+            ];
+
+            if (!toDelete.isEmpty()) { delete toDelete; }
+            return;
+        }
+
+        List<SBQQ__Subscription__c> subs = [
+            SELECT Id, 
+                Name,
+                SBQQ__Account__c,
+                SBQQ__Product__r.Name,
+                SBQQ__Contract__r.Status,
+                SBQQ__StartDate__c,
+                SBQQ__EndDate__c
+            FROM SBQQ__Subscription__c
+            WHERE Id IN :subscriptionIds
+        ];
+
+        List<Subscription_Viewer__c> mirrorSubs = new List<Subscription_Viewer__c>();
+
+        for (SBQQ__Subscription__c sub : subs) {
+            Subscription_Viewer__c mirror = new Subscription_Viewer__c();
+            mirror.CPQ_Subscription_Id__c = sub.Id;
+            mirror.Name = sub.Name;
+            mirror.Account__c = sub.SBQQ__Account__c;
+            mirror.Product_Name__c = sub.SBQQ__Product__r != null ? sub.SBQQ__Product__r.Name : null;
+            mirror.Contract_Status__c = sub.SBQQ__Contract__r != null ? sub.SBQQ__Contract__r.Status : null;
+            mirror.Start_Date__c = sub.SBQQ__StartDate__c;
+            mirror.End_Date__c = sub.SBQQ__EndDate__c;
+
+            mirrorSubs.add(mirror);
+        }
+
+        if (!mirrorSubs.isEmpty()) { Database.upsert(mirrorSubs, Subscription_Viewer__c.Fields.CPQ_Subscription_Id__c, false); }
+    }
+}
