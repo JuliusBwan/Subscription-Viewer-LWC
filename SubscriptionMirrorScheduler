@@ -1,0 +1,16 @@
+public with sharing class SubscriptionMirrorScheduler implements Schedulable {
+
+    public void execute(SchedulableContext sc) {
+        Database.executeBatch(new SubscriptionMirrorFullBatch(), 2000);
+    }
+}
+
+/*
+    String cronExp = '0 0 2 ? * SAT';
+    System.schedule('Weekly Subscription Reconciliation', cronExp, new SubscriptionMirrorScheduler());
+
+
+    Second Minute Hour Day Month DayOfWeek
+    0      0      2    ?   *     SAT
+
+*/
