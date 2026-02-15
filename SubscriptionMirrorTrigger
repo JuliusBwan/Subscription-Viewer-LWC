@@ -1,0 +1,4 @@
+trigger SubscriptionMirrorTrigger on SBQQ__Subscription__c (after insert, after update, after delete, after undelete) {
+    
+    SubscriptionMirrorTriggerHelper.run(Trigger.New, Trigger.Old);
+}
