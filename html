@@ -1,0 +1,22 @@
+<template>
+    <lightning-card>
+        <lightning-datatable
+            key-field="Id"
+            data={data}
+            columns={columns}
+            hide-checkbox-column
+        ></lightning-datatable>
+
+        <div class="slds-m-around_medium">
+            <lightning-button
+                label="Load More"
+                onclick={handleLoadMore}
+                variant="brand"
+            ></lightning-button>
+        </div>
+
+        <template if:true={loading}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+    </lightning-card>
+</template>
