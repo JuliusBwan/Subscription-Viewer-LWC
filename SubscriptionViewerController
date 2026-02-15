@@ -1,0 +1,39 @@
+public with sharing class SubscriptionViewerController {
+
+    @AuraEnabled(cacheable=true)
+    public static SubscriptionResult getSubscriptions(Integer pageSize, Id lastRecordId){
+        try {
+            
+            if (pageSize == null || pageSize <= 0) {
+                pageSize = 25;
+            }
+
+            String baseQuery = 
+            'SELECT Id, Name, Account__r.Name, Product_Name__c, ' +
+            'Contract_Status__c, Start_Date__c, End_Date__c ' +
+            'FROM Subscription_Viewer__c ';
+
+            if (lastRecordId != null) {
+                baseQuery += 'WHERE Id > :lastRecordId ';
+            }
+
+            baseQuery += 'ORDER BY Id ASC LIMIT :pageSize';
+
+            List<Subscription_Viewer__c> records = Database.query(baseQuery);
+
+            return new SubscriptionResult(records);
+
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    public class SubscriptionResult  {
+        @AuraEnabled public List<Subscription_Viewer__c> records;
+
+        public SubscriptionResult(List<Subscription_Viewer__c> records){
+            this.records = records;
+        }
+    }
+
+}
