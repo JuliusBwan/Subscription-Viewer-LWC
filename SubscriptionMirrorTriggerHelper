@@ -1,0 +1,21 @@
+public with sharing class SubscriptionMirrorTriggerHelper {
+
+    public static void run(List<SBQQ__Subscription__c> newSubs, List<SBQQ__Subscription__c> oldSubs) {
+        Set<Id> subscriptionIds = new Set<Id>();
+
+        switch on Trigger.OperationType {
+
+            when AFTER_INSERT, AFTER_UPDATE, AFTER_UNDELETE {
+                for (SBQQ__Subscription__c sub : newSubs) { subscriptionIds.add(sub.Id); }
+            }
+            when AFTER_DELETE {
+                for (SBQQ__Subscription__c sub : oldSubs) { subscriptionIds.add(sub.Id); }
+            }
+            when else {
+                System.debug(LoggingLevel.WARN, 'Unsupported trigger context: ' + Trigger.OperationType);
+            }
+        }     
+
+        if (!subscriptionIds.isEmpty()) { System.enqueueJob(new SubscriptionMirrorQueueable(subscriptionIds, Trigger.isDelete)); }
+    }
+}
